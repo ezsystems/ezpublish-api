@@ -1,30 +1,33 @@
 <?php
-namespace eZ\Publish\API\Repository\Values\Content;
+/**
+ * File containing the UserGroupStub class
+ *
+ * @copyright Copyright (C) 1999-2012 eZ Systems AS. All rights reserved.
+ * @license http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
+ * @version //autogentag//
+ */
 
-use eZ\Publish\API\Repository\Values\ValueObject;
+namespace eZ\Publish\API\Repository\Tests\Stubs\Values\User;
 
-use eZ\Publish\API\Repository\Values\Content\VersionInfo;
+use \eZ\Publish\API\Repository\Values\User\UserGroup;
 
 /**
+ * Stubbed implementation of the {@link \eZ\Publish\API\Repository\Values\User\UserGroup}
+ * class.
  *
- * this class represents a content object in a specific version
- *
- * @property-read ContentInfo $contentInfo convenience getter for $versionInfo->contentInfo
- * @property-read ContentType $contentType convenience getter for $contentInfo->contentType
- * @property-read int $contentId convenience getter for retrieving the contentId: $versionInfo->content->contentId
- * @property-read VersionInfo $versionInfo calls getVersionInfo()
- * @property-read array $fields access fields
- * @property-read array $relations calls getRelations()
- *
+ * @see \eZ\Publish\API\Repository\Values\User\UserGroup
  */
-abstract class Content extends ValueObject
+class UserGroupStub extends UserGroup
 {
     /**
      * returns the VersionInfo for this version
      *
      * @return VersionInfo
      */
-    abstract public function getVersionInfo();
+    public function getVersionInfo()
+    {
+        // TODO: Implement getVersionInfo() method.
+    }
 
     /**
      * returns a field value for the given value
@@ -38,21 +41,30 @@ abstract class Content extends ValueObject
      *
      * @return mixed a primitive type or a field type Value object depending on the field type.
      */
-    abstract public function getFieldValue( $fieldDefIdentifier, $languageCode = null );
+    public function getFieldValue( $fieldDefIdentifier, $languageCode = null )
+    {
+        // TODO: Implement getFieldValue() method.
+    }
 
     /**
      * returns the outgoing relations
      *
      * @return array an array of {@link Relation}
      */
-    abstract public function getRelations();
+    public function getRelations()
+    {
+        // TODO: Implement getRelations() method.
+    }
 
     /**
      * This method returns the complete fields collection
      *
      * @return array an array of {@link Field}
      */
-    abstract public function getFields();
+    public function getFields()
+    {
+        // TODO: Implement getFields() method.
+    }
 
     /**
      * This method returns the fields for a given language and non translatable fields
@@ -63,5 +75,9 @@ abstract class Content extends ValueObject
      *
      * @return array an array of {@link Field} with field identifier as keys
      */
-    abstract public function getFieldsByLanguage( $languageCode = null );
+    public function getFieldsByLanguage( $languageCode = null )
+    {
+        // TODO: Implement getFieldsByLanguage() method.
+    }
+
 }

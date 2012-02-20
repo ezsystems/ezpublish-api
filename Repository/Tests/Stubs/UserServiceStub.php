@@ -1,25 +1,69 @@
 <?php
 /**
- * @package eZ\Publish\API\Repository
+ * File containing the UserServiceStub class
+ *
+ * @copyright Copyright (C) 1999-2012 eZ Systems AS. All rights reserved.
+ * @license http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
+ * @version //autogentag//
  */
-namespace eZ\Publish\API\Repository;
 
-use eZ\Publish\API\Repository\Values\User\UserCreateStruct;
-use eZ\Publish\API\Repository\Values\User\UserUpdateStruct;
-use eZ\Publish\API\Repository\Values\User\User;
-use eZ\Publish\API\Repository\Values\User\UserGroup;
-use eZ\Publish\API\Repository\Values\User\UserGroupCreateStruct;
-use eZ\Publish\API\Repository\Values\User\UserGroupUpdateStruct;
+namespace eZ\Publish\API\Repository\Tests\Stubs;
+
+use \eZ\Publish\API\Repository\Repository;
+use \eZ\Publish\API\Repository\UserService;
+use \eZ\Publish\API\Repository\Values\User\User;
+use \eZ\Publish\API\Repository\Values\User\UserCreateStruct;
+use \eZ\Publish\API\Repository\Values\User\UserUpdateStruct;
+use \eZ\Publish\API\Repository\Values\User\UserGroup;
+use \eZ\Publish\API\Repository\Values\User\UserGroupCreateStruct;
+use \eZ\Publish\API\Repository\Values\User\UserGroupUpdateStruct;
+
+use \eZ\Publish\API\Repository\Tests\Stubs\Exceptions\NotFoundExceptionStub;
+use \eZ\Publish\API\Repository\Tests\Stubs\Values\User\UserGroupStub;
+use \eZ\Publish\API\Repository\Tests\Stubs\Values\User\UserGroupCreateStructStub;
 
 /**
- * This service provides methods for managing users and user groups
+ * Stubbed implementation of the {@link \eZ\Publish\API\Repository\UserService}
+ * interface.
  *
- * @example Examples/user.php
- *
- * @package eZ\Publish\API\Repository
+ * @see \eZ\Publish\API\Repository\UserService
  */
-interface UserService
+class UserServiceStub implements UserService
 {
+    /**
+     * @var \eZ\Publish\API\Repository\Repository
+     */
+    private $repository;
+
+    /**
+     * @var \eZ\Publish\API\Repository\Values\User\UserGroup[]
+     */
+    private $userGroups = array();
+
+    /**
+     * @var integer
+     */
+    private $userGroupNextId = 211;
+
+    /**
+     * Instantiates a new user service instance.
+     *
+     * @param \eZ\Publish\API\Repository\Repository $repository
+     */
+    public function __construct( Repository $repository )
+    {
+        $this->repository = $repository;
+
+        $this->userGroups = array(
+            4    =>  new UserGroupStub( array( 'id' => 4,   'parentId' => 0 ) ),
+            11   =>  new UserGroupStub( array( 'id' => 11,  'parentId' => 4 ) ),
+            12   =>  new UserGroupStub( array( 'id' => 12,  'parentId' => 4 ) ),
+            13   =>  new UserGroupStub( array( 'id' => 12,  'parentId' => 4 ) ),
+            211  =>  new UserGroupStub( array( 'id' => 211, 'parentId' => 4 ) ),
+            42   =>  new UserGroupStub( array( 'id' => 42,  'parentId' => 4 ) )
+        );
+    }
+
     /**
      * Creates a new user group using the data provided in the ContentCreateStruct parameter
      *
@@ -37,7 +81,18 @@ interface UserService
      * @throws \eZ\Publish\API\Repository\Exceptions\ContentFieldValidationException if a field in the $userGroupCreateStruct is not valid
      * @throws \eZ\Publish\API\Repository\Exceptions\ContentValidationException if a required field is missing
      */
-    public function createUserGroup( UserGroupCreateStruct $userGroupCreateStruct, UserGroup $parentGroup );
+    public function createUserGroup( UserGroupCreateStruct $userGroupCreateStruct, UserGroup $parentGroup )
+    {
+        $userGroup = new UserGroupStub(
+            array(
+                'id'        =>  ++$this->userGroupNextId,
+                'parentId'  =>  $parentGroup->id,
+            )
+        );
+        $this->userGroups[$userGroup->id] = $userGroup;
+
+        return $userGroup;
+    }
 
     /**
      * Loads a user group for the given id
@@ -49,7 +104,14 @@ interface UserService
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the authenticated user is not allowed to create a user group
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException if the user group with the given id was not found
      */
-    public function loadUserGroup( $id );
+    public function loadUserGroup( $id )
+    {
+        if ( isset( $this->userGroups[$id] ) )
+        {
+            return $this->userGroups[$id];
+        }
+        throw new NotFoundExceptionStub( '@TODO: What error code should be used?' );
+    }
 
     /**
      * Loads the sub groups of a user group
@@ -61,7 +123,18 @@ interface UserService
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the authenticated user is not allowed to read the user group
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException if the user group with the given id was not found
      */
-    public function loadSubUserGroups( UserGroup $userGroup );
+    public function loadSubUserGroups( UserGroup $userGroup )
+    {
+        $subUserGroups = array();
+        foreach ( $this->userGroups as $group )
+        {
+            if ( $group->parentId === $userGroup->id )
+            {
+                $subUserGroups[] = $group;
+            }
+        }
+        return $subUserGroups;
+    }
 
     /**
      * Removes a user group
@@ -73,7 +146,10 @@ interface UserService
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the authenticated user is not allowed to create a user group
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException if the user group with the given id was not found
      */
-    public function deleteUserGroup( UserGroup $userGroup );
+    public function deleteUserGroup( UserGroup $userGroup )
+    {
+        // TODO: Implement deleteUserGroup() method.
+    }
 
     /**
      * Moves the user group to another parent
@@ -84,13 +160,16 @@ interface UserService
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the authenticated user is not allowed to move the user group
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException if the user group with the given id was not found
      */
-    public function moveUserGroup( UserGroup $userGroup, UserGroup $newParent );
+    public function moveUserGroup( UserGroup $userGroup, UserGroup $newParent )
+    {
+        // TODO: Implement moveUserGroup() method.
+    }
 
     /**
      * Updates the group profile with fields and meta data
      *
      * 4.x: If the versionUpdateStruct is set in $userGroupUpdateStruct, this method internally creates a content draft, updates ts with the provided data
-     * and publishes the draft. If a draft is explicitly required, the user group can be updated via the content service methods.
+     * and publishes the draft. If a draft is explititely required, the user group can be updated via the content service methods.
      *
      * @param \eZ\Publish\API\Repository\Values\User\UserGroup $userGroup
      * @param \eZ\Publish\API\Repository\Values\User\UserGroupUpdateStruct $userGroupUpdateStruct
@@ -101,7 +180,10 @@ interface UserService
      * @throws \eZ\Publish\API\Repository\Exceptions\ContentFieldValidationException if a field in the $userGroupUpdateStruct is not valid
      * @throws \eZ\Publish\API\Repository\Exceptions\ContentValidationException if a required field is set empty
      */
-    public function updateUserGroup( UserGroup $userGroup, UserGroupUpdateStruct $userGroupUpdateStruct );
+    public function updateUserGroup( UserGroup $userGroup, UserGroupUpdateStruct $userGroupUpdateStruct )
+    {
+        // TODO: Implement updateUserGroup() method.
+    }
 
     /**
      * Create a new user. The created user is published by this method
@@ -116,7 +198,10 @@ interface UserService
      * @throws \eZ\Publish\API\Repository\Exceptions\ContentFieldValidationException if a field in the $userCreateStruct is not valid
      * @throws \eZ\Publish\API\Repository\Exceptions\ContentValidationException if a required field is missing
      */
-    public function createUser( UserCreateStruct $userCreateStruct, array $parentGroups );
+    public function createUser( UserCreateStruct $userCreateStruct, array $parentGroups )
+    {
+        // TODO: Implement createUser() method.
+    }
 
     /**
      * Loads a user
@@ -127,7 +212,10 @@ interface UserService
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException if a user with the given id was not found
      */
-    public function loadUser( $userId );
+    public function loadUser( $userId )
+    {
+        // TODO: Implement loadUser() method.
+    }
 
     /**
      * Loads a user for the given login and password
@@ -139,7 +227,10 @@ interface UserService
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\NotFoundException if a user with the given credentials was not found
      */
-    public function loadUserByCredentials( $login, $password );
+    public function loadUserByCredentials( $login, $password )
+    {
+        // TODO: Implement loadUserByCredentials() method.
+    }
 
     /**
      * This method deletes a user
@@ -148,13 +239,16 @@ interface UserService
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the authenticated user is not allowed to delete the user
      */
-    public function deleteUser( User $user );
+    public function deleteUser( User $user )
+    {
+        // TODO: Implement deleteUser() method.
+    }
 
     /**
      * Updates a user
      *
      * 4.x: If the versionUpdateStruct is set in the user update structure, this method internally creates a content draft, updates ts with the provided data
-     * and publishes the draft. If a draft is explicitly required, the user group can be updated via the content service methods.
+     * and publishes the draft. If a draft is explititely required, the user group can be updated via the content service methods.
      *
      * @param \eZ\Publish\API\Repository\Values\User\User $user
      * @param \eZ\Publish\API\Repository\Values\User\UserUpdateStruct
@@ -163,7 +257,10 @@ interface UserService
      * @throws \eZ\Publish\API\Repository\Exceptions\ContentFieldValidationException if a field in the $userUpdateStruct is not valid
      * @throws \eZ\Publish\API\Repository\Exceptions\ContentValidationException if a required field is set empty
      */
-    public function updateUser( User $user, UserUpdateStruct $userUpdateStruct );
+    public function updateUser( User $user, UserUpdateStruct $userUpdateStruct )
+    {
+        // TODO: Implement updateUser() method.
+    }
 
     /**
      * Assigns a new user group to the user
@@ -175,7 +272,10 @@ interface UserService
      *
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the authenticated user is not allowed to assign the user group to the user
      */
-    public function assignUserToUserGroup( User $user, UserGroup $userGroup );
+    public function assignUserToUserGroup( User $user, UserGroup $userGroup )
+    {
+        // TODO: Implement assignUserToUserGroup() method.
+    }
 
     /**
      * Removes a user group from the user
@@ -186,7 +286,10 @@ interface UserService
      * @throws \eZ\Publish\API\Repository\Exceptions\UnauthorizedException if the authenticated user is not allowed to remove the user group from the user
      * @throws \eZ\Publish\API\Repository\Exceptions\IllegalArgumentException if the user is not in the given user group
      */
-    public function unAssignUserFromUserGroup( User $user, UserGroup $userGroup );
+    public function unAssignUserFromUserGroup( User $user, UserGroup $userGroup )
+    {
+        // TODO: Implement unAssignUssrFromUserGroup() method.
+    }
 
     /**
      * Instantiate a user create class
@@ -199,7 +302,10 @@ interface UserService
      *
      * @return \eZ\Publish\API\Repository\Values\User\UserCreateStruct
      */
-    public function newUserCreateStruct( $login, $email, $password, $mainLanguageCode, $contentType = null );
+    public function newUserCreateStruct( $login, $email, $password, $mainLanguageCode, $contentType = null )
+    {
+        // TODO: Implement newUserCreateStruct() method.
+    }
 
     /**
      * Instantiate a user group create class
@@ -209,19 +315,28 @@ interface UserService
      *
      * @return \eZ\Publish\API\Repository\Values\User\UserGroupCreateStruct
      */
-    public function newUserGroupCreateStruct( $mainLanguageCode, $contentType = null );
+    public function newUserGroupCreateStruct( $mainLanguageCode, $contentType = null )
+    {
+        return new UserGroupCreateStructStub( array( 'mainLanguageCode' => $mainLanguageCode ) );
+    }
 
     /**
      * Instantiate a new user update struct
      *
      * @return \eZ\Publish\API\Repository\Values\User\UserUpdateStruct
      */
-    public function newUserUpdateStruct();
+    public function newUserUpdateStruct()
+    {
+        // TODO: Implement newUserUpdateStruct() method.
+    }
 
     /**
      * Instantiate a new user group update struct
      *
      * @return \eZ\Publish\API\Repository\Values\User\UserGroupUpdateStruct
      */
-    public function newUserGroupUpdateStruct();
+    public function newUserGroupUpdateStruct()
+    {
+        // TODO: Implement newUserGroupUpdateStruct() method.
+    }
 }
