@@ -9,7 +9,7 @@
 
 namespace eZ\Publish\API\Repository\Tests\FieldType;
 use eZ\Publish\API\Repository,
-    eZ\Publish\Core\FieldType\TextLine\Value as TextLineValue,
+    eZ\Publish\Core\FieldType\Keyword\Value as KeywordValue,
     eZ\Publish\API\Repository\Values\Content\Field;
 
 /**
@@ -18,7 +18,7 @@ use eZ\Publish\API\Repository,
  * @group integration
  * @group field-type
  */
-class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
+class KeywordFieldTypeIntergrationTest extends BaseIntegrationTest
 {
     /**
      * Get name of tested field tyoe
@@ -27,7 +27,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getTypeName()
     {
-        return 'ezstring';
+        return 'ezkeyword';
     }
 
     /**
@@ -69,18 +69,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getValidatorSchema()
     {
-        return array(
-            'StringLengthValidator' => array(
-                'minStringLength' => array(
-                    'type'    => 'int',
-                    'default' => null,
-                ),
-                'maxStringLength' => array(
-                    'type'    => 'int',
-                    'default' => null,
-                ),
-            )
-        );
+        return array();
     }
 
     /**
@@ -90,12 +79,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getValidValidatorConfiguration()
     {
-        return array(
-            'StringLengthValidator' => array(
-                'minStringLength' => 1,
-                'maxStringLength' => 42,
-            )
-        );
+        return array();
     }
 
     /**
@@ -106,9 +90,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     public function getInvalidValidatorConfiguration()
     {
         return array(
-            'StringLengthValidator' => array(
-                'minStringLength' => new \stdClass(),
-            )
+            'unkknown' => array( 'value' => 23 )
         );
     }
 
@@ -119,7 +101,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getValidCreationFieldData()
     {
-        return new TextLineValue( 'Example' );
+        return new KeywordValue( array( 'foo', 'bar', 'sindelfingen' ) );
     }
 
     /**
@@ -134,12 +116,12 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     public function assertFieldDataLoadedCorrect( Field $field)
     {
         $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
+            'eZ\\Publish\\Core\\FieldType\\Keyword\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'text' => 'Example',
+            'values' => array( 'foo', 'bar', 'sindelfingen' ),
         );
         $this->assertPropertiesCorrect(
             $expectedData,
@@ -176,12 +158,8 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
                 'eZ\\Publish\\Core\\Base\\Exceptions\\InvalidArgumentType',
             ),
             array(
-                42,
+                23,
                 'eZ\\Publish\\Core\\Base\\Exceptions\\InvalidArgumentType',
-            ),
-            array(
-                new TextLineValue( str_repeat( '.', 64 ) ),
-                'eZ\\Publish\\Core\\Base\\Exceptions\\ContentFieldValidationException',
             ),
         );
     }
@@ -193,7 +171,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getValidUpdateFieldData()
     {
-        return new TextLineValue( 'Example  2' );
+        return new KeywordValue( array( 'bielefeld' ) );
     }
 
     /**
@@ -206,12 +184,12 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     public function assertUpdatedFieldDataLoadedCorrect( Field $field )
     {
         $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
+            'eZ\\Publish\\Core\\FieldType\\Keyword\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'text' => 'Example  2',
+            'values' => array( 'bielefeld' ),
         );
         $this->assertPropertiesCorrect(
             $expectedData,
@@ -256,12 +234,12 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     public function assertCopiedFieldDataLoadedCorrectly( Field $field )
     {
         $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
+            'eZ\\Publish\\Core\\FieldType\\Keyword\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'text' => 'Example',
+            'values' => array( 'foo', 'bar', 'sindelfingen' ),
         );
         $this->assertPropertiesCorrect(
             $expectedData,
@@ -293,8 +271,8 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     {
         return array(
             array(
-                new TextLineValue( 'Simple value' ),
-                'Simple value',
+                new KeywordValue( array( 'bielefeld', 'sindelfingen' ) ),
+                array( 'bielefeld', 'sindelfingen' ),
             ),
         );
     }
@@ -310,8 +288,8 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     {
         return array(
             array(
-                'Foobar',
-                new TextLineValue( 'Foobar' )
+                array( 'sindelfeld', 'bielefingen' ),
+                new KeywordValue( array( 'sindelfeld', 'bielefingen' ) )
             ),
         );
     }

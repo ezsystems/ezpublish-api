@@ -9,7 +9,7 @@
 
 namespace eZ\Publish\API\Repository\Tests\FieldType;
 use eZ\Publish\API\Repository,
-    eZ\Publish\Core\FieldType\TextLine\Value as TextLineValue,
+    eZ\Publish\Core\FieldType\Selection\Value as SelectionValue,
     eZ\Publish\API\Repository\Values\Content\Field;
 
 /**
@@ -18,7 +18,7 @@ use eZ\Publish\API\Repository,
  * @group integration
  * @group field-type
  */
-class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
+class SelectionFieldTypeIntergrationTest extends BaseIntegrationTest
 {
     /**
      * Get name of tested field tyoe
@@ -27,7 +27,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getTypeName()
     {
-        return 'ezstring';
+        return 'ezselection';
     }
 
     /**
@@ -37,7 +37,16 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getSettingsSchema()
     {
-        return array();
+        return array(
+            'isMultiple' => array(
+                'type' => 'bool',
+                'default' => false,
+            ),
+            'options' => array(
+                'type' => 'hash',
+                'default' => array(),
+            ),
+        );
     }
 
     /**
@@ -47,7 +56,14 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getValidFieldSettings()
     {
-        return array();
+        return array(
+            'isMultiple' => true,
+            'options' => array(
+                1 => 'First',
+                2 => 'Sindelfingen',
+                3 => 'Bielefeld',
+            )
+        );
     }
 
     /**
@@ -59,6 +75,8 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     {
         return array(
             'somethingUnknown' => 0,
+            'isMultiple' => array(),
+            'options' => new \stdClass(),
         );
     }
 
@@ -69,18 +87,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getValidatorSchema()
     {
-        return array(
-            'StringLengthValidator' => array(
-                'minStringLength' => array(
-                    'type'    => 'int',
-                    'default' => null,
-                ),
-                'maxStringLength' => array(
-                    'type'    => 'int',
-                    'default' => null,
-                ),
-            )
-        );
+        return array();
     }
 
     /**
@@ -90,12 +97,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getValidValidatorConfiguration()
     {
-        return array(
-            'StringLengthValidator' => array(
-                'minStringLength' => 1,
-                'maxStringLength' => 42,
-            )
-        );
+        return array();
     }
 
     /**
@@ -106,9 +108,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     public function getInvalidValidatorConfiguration()
     {
         return array(
-            'StringLengthValidator' => array(
-                'minStringLength' => new \stdClass(),
-            )
+            'unkknown' => array( 'value' => 23 )
         );
     }
 
@@ -119,7 +119,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getValidCreationFieldData()
     {
-        return new TextLineValue( 'Example' );
+        return new SelectionValue( array( 1, 3 ) );
     }
 
     /**
@@ -134,12 +134,12 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     public function assertFieldDataLoadedCorrect( Field $field)
     {
         $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
+            'eZ\\Publish\\Core\\FieldType\\Selection\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'text' => 'Example',
+            'selection' => array( 1, 3 ),
         );
         $this->assertPropertiesCorrect(
             $expectedData,
@@ -175,14 +175,6 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
                 new \stdClass(),
                 'eZ\\Publish\\Core\\Base\\Exceptions\\InvalidArgumentType',
             ),
-            array(
-                42,
-                'eZ\\Publish\\Core\\Base\\Exceptions\\InvalidArgumentType',
-            ),
-            array(
-                new TextLineValue( str_repeat( '.', 64 ) ),
-                'eZ\\Publish\\Core\\Base\\Exceptions\\ContentFieldValidationException',
-            ),
         );
     }
 
@@ -193,7 +185,7 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getValidUpdateFieldData()
     {
-        return new TextLineValue( 'Example  2' );
+        return new SelectionValue( array( 1 ) );
     }
 
     /**
@@ -206,12 +198,12 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     public function assertUpdatedFieldDataLoadedCorrect( Field $field )
     {
         $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
+            'eZ\\Publish\\Core\\FieldType\\Selection\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'text' => 'Example  2',
+            'selection' => array( 1 ),
         );
         $this->assertPropertiesCorrect(
             $expectedData,
@@ -256,12 +248,12 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     public function assertCopiedFieldDataLoadedCorrectly( Field $field )
     {
         $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
+            'eZ\\Publish\\Core\\FieldType\\Selection\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'text' => 'Example',
+            'selection' => array( 1, 3 ),
         );
         $this->assertPropertiesCorrect(
             $expectedData,
@@ -293,8 +285,8 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     {
         return array(
             array(
-                new TextLineValue( 'Simple value' ),
-                'Simple value',
+                new SelectionValue( array( 1, 3 ) ),
+                array( 1, 3 ),
             ),
         );
     }
@@ -310,8 +302,8 @@ class TextLineFieldTypeIntergrationTest extends BaseIntegrationTest
     {
         return array(
             array(
-                'Foobar',
-                new TextLineValue( 'Foobar' )
+                array( 1, 3 ),
+                new SelectionValue( array( 1, 3 ) )
             ),
         );
     }
