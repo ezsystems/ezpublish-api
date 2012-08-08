@@ -9,7 +9,7 @@
 
 namespace eZ\Publish\API\Repository\Tests\FieldType;
 use eZ\Publish\API\Repository,
-    eZ\Publish\Core\FieldType\User\Value as UserValue,
+    eZ\Publish\Core\FieldType\Selection\Value as SelectionValue,
     eZ\Publish\API\Repository\Values\Content\Field;
 
 /**
@@ -18,15 +18,8 @@ use eZ\Publish\API\Repository,
  * @group integration
  * @group field-type
  */
-class UserFieldTypeIntergrationTest extends BaseIntegrationTest
+class SelectionFieldTypeIntergrationTest extends BaseIntegrationTest
 {
-    /**
-     * Identifier of the custom field
-     *
-     * @var string
-     */
-    protected $customFieldIdentifier = "user_account";
-
     /**
      * Get name of tested field tyoe
      *
@@ -34,7 +27,7 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getTypeName()
     {
-        return 'ezuser';
+        return 'ezselection';
     }
 
     /**
@@ -44,7 +37,16 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getSettingsSchema()
     {
-        return array();
+        return array(
+            'isMultiple' => array(
+                'type' => 'bool',
+                'default' => false,
+            ),
+            'options' => array(
+                'type' => 'hash',
+                'default' => array(),
+            ),
+        );
     }
 
     /**
@@ -54,7 +56,14 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getValidFieldSettings()
     {
-        return array();
+        return array(
+            'isMultiple' => true,
+            'options' => array(
+                1 => 'First',
+                2 => 'Sindelfingen',
+                3 => 'Bielefeld',
+            )
+        );
     }
 
     /**
@@ -66,6 +75,8 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
     {
         return array(
             'somethingUnknown' => 0,
+            'isMultiple' => array(),
+            'options' => new \stdClass(),
         );
     }
 
@@ -102,19 +113,13 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
     }
 
     /**
-     * Get initial field externals data
+     * Get initial field data for valid object creation
      *
-     * @return array
+     * @return mixed
      */
     public function getValidCreationFieldData()
     {
-        return new UserValue( array(
-            'accountKey' => null,
-            'isEnabled'  => true,
-            'lastVisit'  => null,
-            'loginCount' => 0,
-            'maxLogin'   => 1000,
-        ) );
+        return new SelectionValue( array( 1, 3 ) );
     }
 
     /**
@@ -126,32 +131,16 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
      * @param Field $field
      * @return void
      */
-    public function assertFieldDataLoadedCorrect( Field $field )
+    public function assertFieldDataLoadedCorrect( Field $field)
     {
         $this->assertInstanceOf(
-            'eZ\Publish\Core\FieldType\User\Value',
+            'eZ\\Publish\\Core\\FieldType\\Selection\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'accountKey' => null,
-            'hasStoredLogin' => true,
-            'contentobjectId' => 226,
-            'login' => 'hans',
-            'email' => 'hans@example.com',
-            'passwordHash' => '680869a9873105e365d39a6d14e68e46',
-            'passwordHashType' => 2,
-            'isLoggedIn' => true,
-            'isEnabled' => true,
-            // @TODO: Fails because of maxLogin problem
-            'isLocked' => false,
-            'lastVisit' => null,
-            'loginCount' => null,
-            // @TODO: Currently not editable through UserService, tests will
-            // fail
-            'maxLogin' => 1000,
+            'selection' => array( 1, 3 ),
         );
-
         $this->assertPropertiesCorrect(
             $expectedData,
             $field->value
@@ -183,10 +172,9 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
     {
         return array(
             array(
-                null,
-                'eZ\\Publish\\API\\Repository\\Exceptions\\ContentValidationException'
+                new \stdClass(),
+                'eZ\\Publish\\Core\\Base\\Exceptions\\InvalidArgumentType',
             ),
-            // TODO: Define more failure cases ...
         );
     }
 
@@ -197,17 +185,7 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function getValidUpdateFieldData()
     {
-        return new UserValue( array(
-            'accountKey'       => 'foobar',
-            'login'            => 'change', // Change is intended to not get through
-            'email'            => 'change', // Change is intended to not get through
-            'passwordHash'     => 'change', // Change is intended to not get through
-            'passwordHashType' => 'change', // Change is intended to not get through
-            'lastVisit'        => 123456789,
-            'loginCount'       => 2300,
-            'isEnabled'        => 'changed', // Change is intended to not get through
-            'maxLogin'         => 'changed', // Change is intended to not get through
-        ) );
+        return new SelectionValue( array( 1 ) );
     }
 
     /**
@@ -220,29 +198,13 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
     public function assertUpdatedFieldDataLoadedCorrect( Field $field )
     {
         $this->assertInstanceOf(
-            'eZ\Publish\Core\FieldType\User\Value',
+            'eZ\\Publish\\Core\\FieldType\\Selection\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'accountKey' => 'foobar',
-            'hasStoredLogin' => true,
-            'contentobjectId' => 226,
-            'login' => 'hans',
-            'email' => 'hans@example.com',
-            'passwordHash' => '680869a9873105e365d39a6d14e68e46',
-            'passwordHashType' => 2,
-            'isLoggedIn' => true,
-            'isEnabled' => true,
-            // @TODO: Fails because of maxLogin problem
-            'isLocked' => true,
-            'lastVisit' => 123456789,
-            'loginCount' => 2300,
-            // @TODO: Currently not editable through UserService, tests will
-            // fail
-            'maxLogin' => 1000,
+            'selection' => array( 1 ),
         );
-
         $this->assertPropertiesCorrect(
             $expectedData,
             $field->value
@@ -272,19 +234,13 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
      */
     public function provideInvalidUpdateFieldData()
     {
-        return array(
-            array(
-                null,
-                'eZ\\Publish\\API\\Repository\\Exceptions\\ContentValidationException'
-            ),
-            // TODO: Define more failure cases ...
-        );
+        return $this->provideInvalidCreationFieldData();
     }
 
     /**
      * Asserts the the field data was loaded correctly.
      *
-     * Asserts that the data provided by {@link getValidCreationFieldData()};
+     * Asserts that the data provided by {@link getValidCreationFieldData()}
      * was copied and loaded correctly.
      *
      * @param Field $field
@@ -292,31 +248,17 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
     public function assertCopiedFieldDataLoadedCorrectly( Field $field )
     {
         $this->assertInstanceOf(
-            'eZ\Publish\Core\FieldType\User\Value',
+            'eZ\\Publish\\Core\\FieldType\\Selection\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'accountKey' => null,
-            'hasStoredLogin' => false,
-            'contentobjectId' => null,
-            'login' => null,
-            'email' => null,
-            'passwordHash' => null,
-            'passwordHashType' => null,
-            'isLoggedIn' => true,
-            'isEnabled' => false,
-            'isLocked' => false,
-            'lastVisit' => null,
-            'loginCount' => null,
-            'maxLogin' => null,
+            'selection' => array( 1, 3 ),
         );
-
         $this->assertPropertiesCorrect(
             $expectedData,
             $field->value
         );
-        return ;
     }
 
     /**
@@ -342,70 +284,28 @@ class UserFieldTypeIntergrationTest extends BaseIntegrationTest
     public function provideToHashData()
     {
         return array(
-            array( new UserValue(), 'toBeDefined' )
+            array(
+                new SelectionValue( array( 1, 3 ) ),
+                array( 1, 3 ),
+            ),
         );
     }
 
     /**
-     * Get hashes and their respective converted values
+     * Get expectations for the fromHash call on our field value
      *
      * This is a PHPUnit data provider
-     *
-     * The returned records must have the the input hash assigned to the
-     * first index and the expected value result to the second. For example:
-     *
-     * <code>
-     * array(
-     *      array(
-     *          array( 'myValue' => true ),
-     *          new MyValue( true ),
-     *      ),
-     *      // ...
-     * );
-     * </code>
      *
      * @return array
      */
     public function provideFromHashData()
     {
         return array(
-            array( 'toBeDefined', array() ),
+            array(
+                array( 1, 3 ),
+                new SelectionValue( array( 1, 3 ) )
+            ),
         );
-    }
-
-    /**
-     * Overwrite normal content creation
-     *
-     * @param mixed $fieldData
-     * @return void
-     */
-    protected function createContent( $fieldData )
-    {
-        $repository  = $this->getRepository();
-        $userService = $repository->getUserService();
-
-        // Instantiate a create struct with mandatory properties
-        $userCreate = $userService->newUserCreateStruct(
-            'hans',
-            'hans@example.com',
-            'password',
-            'eng-US'
-        );
-        $userCreate->enabled  = true;
-
-        // Set some fields required by the user ContentType
-        $userCreate->setField( 'first_name', 'Example' );
-        $userCreate->setField( 'last_name', 'User' );
-
-        // ID of the "Editors" user group in an eZ Publish demo installation
-        $group = $userService->loadUserGroup( 13 );
-
-        // Create a new user instance.
-        $user = $userService->createUser( $userCreate, array( $group ) );
-
-        // Create draft from user content object
-        $contentService = $repository->getContentService();
-        return $contentService->createContentDraft( $user->content->contentInfo, $user->content->versionInfo );
     }
 }
 
