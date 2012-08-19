@@ -1,6 +1,6 @@
 <?php
 /**
- * File contains: eZ\Publish\API\Repository\Tests\FieldType\TextLineIntegrationTest class
+ * File contains: eZ\Publish\API\Repository\Tests\FieldType\BinaryFileIntegrationTest class
  *
  * @copyright Copyright (C) 1999-2012 eZ Systems AS. All rights reserved.
  * @license http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
@@ -8,7 +8,7 @@
  */
 
 namespace eZ\Publish\API\Repository\Tests\FieldType;
-use eZ\Publish\Core\FieldType\TextLine\Value as TextLineValue,
+use eZ\Publish\Core\FieldType\BinaryFile\Value as BinaryFileValue,
     eZ\Publish\API\Repository\Values\Content\Field;
 
 /**
@@ -17,8 +17,43 @@ use eZ\Publish\Core\FieldType\TextLine\Value as TextLineValue,
  * @group integration
  * @group field-type
  */
-class TextLineIntegrationTest extends BaseIntegrationTest
+class BinaryFileIntegrationTest extends FileBaseIntegrationTest
 {
+    /**
+     * Stores the loaded image path for copy test.
+     */
+    protected static $loadedBinaryFilePath;
+
+    /**
+     * Storage dir settings key
+     */
+    protected static $storageDirConfigKey = 'binaryfile_storage_dir';
+
+    /**
+     * Sets up fixture data.
+     *
+     * @return void
+     */
+    protected function getFixtureData()
+    {
+        return array(
+            'create' => array(
+                'path' => ( $path = __DIR__ . '/_fixtures/image.jpg' ),
+                'fileName' => 'Icy-Night-Flower-Binary.jpg',
+                'fileSize' => filesize( $path ),
+                'mimeType' => 'image/jpeg',
+                // Left out'downloadCount' by intention (will be set to 0)
+            ),
+            'update' => array(
+                'path' => ( $path = __DIR__ . '/_fixtures/image.png' ),
+                'fileName' => 'Blue-Blue-Blue-Sindelfingen.png',
+                'fileSize' => filesize( $path ),
+                'downloadCount' => 23,
+                // Left out 'mimeType' by intention (will be auto-detected)
+            ),
+        );
+    }
+
     /**
      * Get name of tested field tyoe
      *
@@ -26,7 +61,7 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function getTypeName()
     {
-        return 'ezstring';
+        return 'ezbinaryfile';
     }
 
     /**
@@ -69,14 +104,10 @@ class TextLineIntegrationTest extends BaseIntegrationTest
     public function getValidatorSchema()
     {
         return array(
-            'StringLengthValidator' => array(
-                'minStringLength' => array(
+            'FileSizeValidator' => array(
+                'maxFileSize' => array(
                     'type'    => 'int',
-                    'default' => null,
-                ),
-                'maxStringLength' => array(
-                    'type'    => 'int',
-                    'default' => null,
+                    'default' => false,
                 ),
             )
         );
@@ -90,10 +121,9 @@ class TextLineIntegrationTest extends BaseIntegrationTest
     public function getValidValidatorConfiguration()
     {
         return array(
-            'StringLengthValidator' => array(
-                'minStringLength' => 1,
-                'maxStringLength' => 42,
-            )
+            'FileSizeValidator' => array(
+                'maxFileSize' => 2 * 1024 * 1024, // 2 MB
+            ),
         );
     }
 
@@ -118,7 +148,8 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function getValidCreationFieldData()
     {
-        return new TextLineValue( 'Example' );
+        $fixtureData = $this->getFixtureData();
+        return new BinaryFileValue( $fixtureData['create'] );
     }
 
     /**
@@ -130,20 +161,29 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      * @param Field $field
      * @return void
      */
-    public function assertFieldDataLoadedCorrect( Field $field)
+    public function assertFieldDataLoadedCorrect( Field $field )
     {
         $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
+            'eZ\\Publish\\Core\\FieldType\\BinaryFile\\Value',
             $field->value
         );
 
-        $expectedData = array(
-            'text' => 'Example',
-        );
+        $fixtureData = $this->getFixtureData();
+        $expectedData = $fixtureData['create'];
+
+        // Will change during storage
+        unset( $expectedData['path'] );
+
         $this->assertPropertiesCorrect(
             $expectedData,
             $field->value
         );
+
+        $this->assertTrue(
+            file_exists( $this->getInstallDir() . '/' . $this->getStorageDir() . '/' . $field->value->path )
+        );
+
+        self::$loadedBinaryFilePath = $field->value->path;
     }
 
     /**
@@ -171,16 +211,24 @@ class TextLineIntegrationTest extends BaseIntegrationTest
     {
         return array(
             array(
-                new \stdClass(),
+                array(),
                 'eZ\\Publish\\Core\\Base\\Exceptions\\InvalidArgumentType',
             ),
             array(
-                42,
+                new BinaryFileValue( array() ),
                 'eZ\\Publish\\Core\\Base\\Exceptions\\InvalidArgumentType',
             ),
             array(
-                new TextLineValue( str_repeat( '.', 64 ) ),
-                'eZ\\Publish\\Core\\Base\\Exceptions\\ContentFieldValidationException',
+                array(
+                    'path' => '/foo/bar/sindelfingen.pdf',
+                ),
+                'eZ\\Publish\\Core\\Base\\Exceptions\\InvalidArgumentType',
+            ),
+            array(
+                new BinaryFileValue( array(
+                    'path' => '/foo/bar/sindelfingen.pdf',
+                ) ),
+                'eZ\\Publish\\Core\\Base\\Exceptions\\InvalidArgumentType',
             ),
         );
     }
@@ -192,7 +240,8 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function getValidUpdateFieldData()
     {
-        return new TextLineValue( 'Example  2' );
+        $fixtureData = $this->getFixtureData();
+        return new BinaryFileValue( $fixtureData['update'] );
     }
 
     /**
@@ -205,16 +254,22 @@ class TextLineIntegrationTest extends BaseIntegrationTest
     public function assertUpdatedFieldDataLoadedCorrect( Field $field )
     {
         $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
+            'eZ\\Publish\\Core\\FieldType\\BinaryFile\\Value',
             $field->value
         );
 
-        $expectedData = array(
-            'text' => 'Example  2',
-        );
+        $fixtureData = $this->getFixtureData();
+        $expectedData = $fixtureData['update'];
+        // Will change during storage
+        unset( $expectedData['path'] );
+
         $this->assertPropertiesCorrect(
             $expectedData,
             $field->value
+        );
+
+        $this->assertTrue(
+            file_exists( $this->getInstallDir() . '/' . $this->getStorageDir() . '/' . $field->value->path )
         );
     }
 
@@ -254,17 +309,11 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function assertCopiedFieldDataLoadedCorrectly( Field $field )
     {
-        $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
-            $field->value
-        );
+        $this->assertFieldDataLoadedCorrect( $field );
 
-        $expectedData = array(
-            'text' => 'Example',
-        );
-        $this->assertPropertiesCorrect(
-            $expectedData,
-            $field->value
+        $this->assertEquals(
+            self::$loadedBinaryFilePath,
+            $field->value->path
         );
     }
 
@@ -290,10 +339,12 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function provideToHashData()
     {
+        $fixture = $this->getFixtureData();
+        $fixture['create']['downloadCount'] = 0;
         return array(
             array(
-                new TextLineValue( 'Simple value' ),
-                'Simple value',
+                $this->getValidCreationFieldData(),
+                $fixture['create'],
             ),
         );
     }
@@ -307,10 +358,12 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function provideFromHashData()
     {
+        $fixture = $this->getFixtureData();
+        $fixture['create']['downloadCount'] = 0;
         return array(
             array(
-                'Foobar',
-                new TextLineValue( 'Foobar' )
+                $fixture['create'],
+                $this->getValidCreationFieldData()
             ),
         );
     }

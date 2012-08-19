@@ -1,6 +1,6 @@
 <?php
 /**
- * File contains: eZ\Publish\API\Repository\Tests\FieldType\TextLineIntegrationTest class
+ * File contains: eZ\Publish\API\Repository\Tests\FieldType\XmlTextIntegrationTest class
  *
  * @copyright Copyright (C) 1999-2012 eZ Systems AS. All rights reserved.
  * @license http://www.gnu.org/licenses/gpl-2.0.txt GNU General Public License v2
@@ -8,7 +8,8 @@
  */
 
 namespace eZ\Publish\API\Repository\Tests\FieldType;
-use eZ\Publish\Core\FieldType\TextLine\Value as TextLineValue,
+use eZ\Publish\Core\FieldType\XmlText\Value as XmlTextValue,
+    eZ\Publish\Core\FieldType\XmlText\Type as XmlTextType,
     eZ\Publish\API\Repository\Values\Content\Field;
 
 /**
@@ -17,7 +18,7 @@ use eZ\Publish\Core\FieldType\TextLine\Value as TextLineValue,
  * @group integration
  * @group field-type
  */
-class TextLineIntegrationTest extends BaseIntegrationTest
+class XmlTextIntergrationTest extends BaseIntegrationTest
 {
     /**
      * Get name of tested field tyoe
@@ -26,7 +27,7 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function getTypeName()
     {
-        return 'ezstring';
+        return 'ezxmltext';
     }
 
     /**
@@ -36,7 +37,16 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function getSettingsSchema()
     {
-        return array();
+        return array(
+            'numRows' => array(
+                'type' => 'int',
+                'default' => 10,
+            ),
+            'tagPreset' => array(
+                'type' => 'choice',
+                'default' => XmlTextType::TAG_PRESET_DEFAULT,
+            )
+        );
     }
 
     /**
@@ -46,7 +56,10 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function getValidFieldSettings()
     {
-        return array();
+        return array(
+            'numRows' => 0,
+            'tagPreset' => XmlTextType::TAG_PRESET_DEFAULT,
+        );
     }
 
     /**
@@ -68,18 +81,7 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function getValidatorSchema()
     {
-        return array(
-            'StringLengthValidator' => array(
-                'minStringLength' => array(
-                    'type'    => 'int',
-                    'default' => null,
-                ),
-                'maxStringLength' => array(
-                    'type'    => 'int',
-                    'default' => null,
-                ),
-            )
-        );
+        return array();
     }
 
     /**
@@ -89,12 +91,7 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function getValidValidatorConfiguration()
     {
-        return array(
-            'StringLengthValidator' => array(
-                'minStringLength' => 1,
-                'maxStringLength' => 42,
-            )
-        );
+        return array();
     }
 
     /**
@@ -105,9 +102,7 @@ class TextLineIntegrationTest extends BaseIntegrationTest
     public function getInvalidValidatorConfiguration()
     {
         return array(
-            'StringLengthValidator' => array(
-                'minStringLength' => new \stdClass(),
-            )
+            'unkknown' => array( 'value' => 23 )
         );
     }
 
@@ -118,7 +113,18 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function getValidCreationFieldData()
     {
-        return new TextLineValue( 'Example' );
+        $xmlData = '<?xml version="1.0" encoding="utf-8"?>
+<section xmlns:image="http://ez.no/namespaces/ezpublish3/image/" xmlns:xhtml="http://ez.no/namespaces/ezpublish3/xhtml/" xmlns:custom="http://ez.no/namespaces/ezpublish3/custom/">
+<paragraph>Example</paragraph>
+</section>';
+        $mock = $this->getMockForXmlTextInputHandler();
+        $mock
+            ->expects( $this->once() )
+            ->method( 'isXmlValid' )
+            ->with( $xmlData )
+            ->will( $this->returnValue( true ) );
+
+        return new XmlTextValue( $mock, $xmlData );
     }
 
     /**
@@ -133,12 +139,15 @@ class TextLineIntegrationTest extends BaseIntegrationTest
     public function assertFieldDataLoadedCorrect( Field $field)
     {
         $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
+            'eZ\\Publish\\Core\\FieldType\\XmlText\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'text' => 'Example',
+            'text' => '<?xml version="1.0" encoding="utf-8"?>
+<section xmlns:image="http://ez.no/namespaces/ezpublish3/image/" xmlns:xhtml="http://ez.no/namespaces/ezpublish3/xhtml/" xmlns:custom="http://ez.no/namespaces/ezpublish3/custom/">
+<paragraph>Example</paragraph>
+</section>',
         );
         $this->assertPropertiesCorrect(
             $expectedData,
@@ -174,14 +183,6 @@ class TextLineIntegrationTest extends BaseIntegrationTest
                 new \stdClass(),
                 'eZ\\Publish\\Core\\Base\\Exceptions\\InvalidArgumentType',
             ),
-            array(
-                42,
-                'eZ\\Publish\\Core\\Base\\Exceptions\\InvalidArgumentType',
-            ),
-            array(
-                new TextLineValue( str_repeat( '.', 64 ) ),
-                'eZ\\Publish\\Core\\Base\\Exceptions\\ContentFieldValidationException',
-            ),
         );
     }
 
@@ -192,7 +193,18 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function getValidUpdateFieldData()
     {
-        return new TextLineValue( 'Example  2' );
+        $xmlData = '<?xml version="1.0" encoding="utf-8"?>
+<section xmlns:image="http://ez.no/namespaces/ezpublish3/image/" xmlns:xhtml="http://ez.no/namespaces/ezpublish3/xhtml/" xmlns:custom="http://ez.no/namespaces/ezpublish3/custom/">
+<paragraph>Example 2</paragraph>
+</section>';
+        $mock = $this->getMockForXmlTextInputHandler();
+        $mock
+            ->expects( $this->once() )
+            ->method( 'isXmlValid' )
+            ->with( $xmlData )
+            ->will( $this->returnValue( true ) );
+
+        return new XmlTextValue( $mock, $xmlData );
     }
 
     /**
@@ -205,12 +217,15 @@ class TextLineIntegrationTest extends BaseIntegrationTest
     public function assertUpdatedFieldDataLoadedCorrect( Field $field )
     {
         $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
+            'eZ\\Publish\\Core\\FieldType\\XmlText\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'text' => 'Example  2',
+            'text' => '<?xml version="1.0" encoding="utf-8"?>
+<section xmlns:image="http://ez.no/namespaces/ezpublish3/image/" xmlns:xhtml="http://ez.no/namespaces/ezpublish3/xhtml/" xmlns:custom="http://ez.no/namespaces/ezpublish3/custom/">
+<paragraph>Example 2</paragraph>
+</section>',
         );
         $this->assertPropertiesCorrect(
             $expectedData,
@@ -255,12 +270,15 @@ class TextLineIntegrationTest extends BaseIntegrationTest
     public function assertCopiedFieldDataLoadedCorrectly( Field $field )
     {
         $this->assertInstanceOf(
-            'eZ\\Publish\\Core\\FieldType\\TextLine\\Value',
+            'eZ\\Publish\\Core\\FieldType\\XmlText\\Value',
             $field->value
         );
 
         $expectedData = array(
-            'text' => 'Example',
+            'text' => '<?xml version="1.0" encoding="utf-8"?>
+<section xmlns:image="http://ez.no/namespaces/ezpublish3/image/" xmlns:xhtml="http://ez.no/namespaces/ezpublish3/xhtml/" xmlns:custom="http://ez.no/namespaces/ezpublish3/custom/">
+<paragraph>Example</paragraph>
+</section>',
         );
         $this->assertPropertiesCorrect(
             $expectedData,
@@ -290,10 +308,21 @@ class TextLineIntegrationTest extends BaseIntegrationTest
      */
     public function provideToHashData()
     {
+        $xmlData = '<?xml version="1.0" encoding="utf-8"?>
+<section xmlns:image="http://ez.no/namespaces/ezpublish3/image/" xmlns:xhtml="http://ez.no/namespaces/ezpublish3/xhtml/" xmlns:custom="http://ez.no/namespaces/ezpublish3/custom/">
+<paragraph>Simple value</paragraph>
+</section>';
+        $mock = $this->getMockForXmlTextInputHandler();
+        $mock
+            ->expects( $this->once() )
+            ->method( 'isXmlValid' )
+            ->with( $xmlData )
+            ->will( $this->returnValue( true ) );
+
         return array(
             array(
-                new TextLineValue( 'Simple value' ),
-                'Simple value',
+                new XmlTextValue( $mock, $xmlData ),
+                $xmlData,
             ),
         );
     }
@@ -309,10 +338,43 @@ class TextLineIntegrationTest extends BaseIntegrationTest
     {
         return array(
             array(
-                'Foobar',
-                new TextLineValue( 'Foobar' )
+                '<?xml version="1.0" encoding="utf-8"?>
+<section xmlns:image="http://ez.no/namespaces/ezpublish3/image/" xmlns:xhtml="http://ez.no/namespaces/ezpublish3/xhtml/" xmlns:custom="http://ez.no/namespaces/ezpublish3/custom/">
+<paragraph>Foobar</paragraph>
+</section>'
             ),
         );
     }
-}
 
+    /**
+     * @dataProvider provideFromHashData
+     * @TODO: Requires correct registered FieldTypeService, needs to be
+     *        maintained!
+     */
+    public function testFromHash( $hash, $expectedValue = null )
+    {
+        $xmlTextValue = $this
+                ->getRepository()
+                ->getFieldTypeService()
+                ->getFieldType( $this->getTypeName() )
+                ->fromHash( $hash );
+        $this->assertInstanceOf(
+            'eZ\\Publish\\Core\\FieldType\\XmlText\\Value',
+            $xmlTextValue
+        );
+        $this->assertEquals( $hash, $xmlTextValue->text );
+    }
+
+    /**
+     * Returns an XmlText Input Handler mock.
+     *
+     * @return \eZ\Publish\Core\FieldType\XmlText\Input\Handler
+     */
+    protected function getMockForXmlTextInputHandler()
+    {
+        return $this
+            ->getMockBuilder( 'eZ\\Publish\\Core\\FieldType\\XmlText\\Input\\Handler' )
+            ->disableOriginalConstructor()
+            ->getMock();
+    }
+}
