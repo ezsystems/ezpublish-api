@@ -10,19 +10,8 @@ return eZ\Publish\API\Repository\Values\Content\Search\SearchResult::__set_state
     eZ\Publish\API\Repository\Values\Content\Search\SearchHit::__set_state(array(
        'valueObject' => 
       array (
-        'id' => 4,
-        'title' => 'Users',
-      ),
-       'score' => NULL,
-       'index' => NULL,
-       'highlight' => NULL,
-    )),
-    1 => 
-    eZ\Publish\API\Repository\Values\Content\Search\SearchHit::__set_state(array(
-       'valueObject' => 
-      array (
-        'id' => 57,
-        'title' => 'Home',
+        'id' => 54,
+        'title' => 'eZ Publish Demo Design (without demo content)',
       ),
        'score' => NULL,
        'index' => NULL,
@@ -33,6 +22,6 @@ return eZ\Publish\API\Repository\Values\Content\Search\SearchResult::__set_state
    'time' => 1,
    'timedOut' => NULL,
    'maxScore' => NULL,
-   'totalCount' => 2,
+   'totalCount' => 1,
 ));
 
